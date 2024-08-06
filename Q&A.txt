@@ -1,0 +1,46 @@
+Eu escrevi esse arquivo no intuito de talvez ajudar o professor a entender o que eu usei e por que eu decidi usar, espero que isso ajude! 
+
+Arquivo .CSV:
+
+Primeiro, o arquivo que eu mandei para o senhor já contem o arquivo .csv com dados simulados, porém se você apaga-lo e tentar inserir
+as informações, ele criará automaticamente um novo .csv.
+
+Número Mínimo para Evitar Erros:
+
+Como eu to usando 20% pra treino e 80% pra teste, fazendo o calculo basico de 1 / 0.2 (20%) eu preciso pelo menos de 5 dados para a
+a aplicação ser fiel, ela roda mesmo sem 5 dados, porém não do jeito que deveria! 
+
+Modelo .PKL:
+
+Você também pode testar exclui-la! assim que você inserir os dados e testar a aplicação, ela também vai criar automaticamente o modelo caso ele não exista.
+
+
+
+OBS: Eu usei a extensão Prettier, então se você acessar o .json settings você pode ver que vai ter um código lá pra toda vez que eu apertar
+ctrl s ele formatar sozinho meu código, espero que não tenha problema eu ter usado!
+
+
+alguns pontos importantes:
+
+Eu cheguei a conclusão de usar a biblioteca pandas por que, segundo pesquisas, é uma biblioteca que me ofereceu dois pontos principais do meu modelo, o DataFrame e Series.
+
+Eu fiz a analise dos dados em tabela, com linhas e colunas similar com o excel ou até
+uma tabela SQL. Além diso ela também facilita a manipulação de dados, eu usei o panda para
+filtrar os dados do meu modelo, para que assim a IA possa ter mais acurácia!
+
+também usei por motivos obvios que ela é integrada com aprendizado de maquina, que no caso eu
+usei o scikit-learn, e o motivo PRINCIPAL é por que ela oferece apoio para leitura e escrita
+de dados .CSV.
+
+
+por que usar arquivo .csv?
+
+Simples, haviam duas opções que eu poderia usar para fazer a IA interpretar os dados, pelo que pesquisei. Binário e .CSV. Eu prefiri usar o CSV por motivos óbvios: falta de tempo e cortar
+a necessidade de aprender sobre códigos binarios (Deus me livre) então eu decidi usar o .csv por ser facil e pelo maravilhoso pandas me ajudar com a leitura desses dados para servir como
+um intermediario!
+
+no que meu modelo impacta em questão da GS?
+
+através desse modelo, a marinha pode fazer um relatório sem intervenção humana, apenas colocando dados para ver as possibilidades de vazamento de petróleo no próximo mes! tendo um controle
+maior sobre a poluição para PREVENIR que se alastre mais ainda, tendo esse relatorio em mãos é possivel tentar concentrar e no proximo mes ver se piorou ou melhorou. Além de, se um dia
+está com uma porcentagem maior que o outro, o problema é no navio, questão de lógica.

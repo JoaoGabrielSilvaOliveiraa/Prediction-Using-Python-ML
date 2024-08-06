@@ -1,17 +1,18 @@
-import pandas as pd
-import numpy as np
+import pandas as panda
 from datetime import datetime, timedelta
 import os
+import numpy as numpy
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import joblib
 
 
-# Função para salvar dados no CSV
+# função que salva os dados no arquivo pra eu poder usar depois
 def salvar_dados_csv(houve_vazamento, dia, tipo_vazamento, data):
-    df = pd.DataFrame(
+
+    data = datetime.now().strftime("%Y-%m-%d")
+    dataframe = panda.DataFrame(
         {
             "houve_vazamento": [houve_vazamento],
             "dia": [dia],
@@ -20,119 +21,131 @@ def salvar_dados_csv(houve_vazamento, dia, tipo_vazamento, data):
         }
     )
 
-    # Verifica se o arquivo CSV já existe
     if os.path.exists("dados_incidentes.csv"):
-        existing_data = pd.read_csv("dados_incidentes.csv", encoding="utf-8")
-        df = pd.concat([existing_data, df], ignore_index=True)
+        existing_data = panda.read_csv("dados_incidentes.csv", encoding="utf-8")
+        dataframe = panda.concat([existing_data, dataframe], ignore_index=True)
 
-    df.to_csv("dados_incidentes.csv", index=False)
-    print("Dados salvos no arquivo 'dados_incidentes.csv'.")
+    dataframe.to_csv("dados_incidentes.csv", index=False)
+    print("os dados foram salvos corretamente no arquivo .csv")
 
 
-# Função para carregar dados do CSV
+# a Função que carrega os dados do .csv
 def carregar_dados():
     try:
-        data = pd.read_csv("dados_incidentes.csv", encoding="utf-8")
-        print("Dados carregados com sucesso.")
-        return data
+        dataframe = panda.read_csv("dados_incidentes.csv", parse_dates=["data"])
+        dataframe["diasemana"] = dataframe["data"].dt.dayofweek
+        print("Os dados foram carregados")
+        return dataframe
     except FileNotFoundError:
-        print("Erro: Arquivo 'dados_incidentes.csv' não encontrado.")
-        return pd.DataFrame()
+        print("Erro: o arquivo dados_incidentes não foi encontrado!")
+        return panda.DataFrame()
 
 
-# Função para filtrar dados
+# função que eu usei pra filtrar os dados (tava dando erro de filtragem na acuracia e eu tive que filtrar)
 def filtrar_dados(data):
-    data["data"] = pd.to_datetime(data["data"])
-    data["dia_semana"] = data["data"].dt.dayofweek  # 0=Segunda, 1=Terça, etc.
+    data["data"] = panda.to_datetime(data["data"])
+    data["diasemana"] = data["data"].dt.dayofweek
     return data
 
 
-# Função para treinar o modelo
-def treinar_modelo(features, target):
+# aqui eu fiz o treinamento do modelo da minha IA
+def treinamento(features, target):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(features)
 
-    # Ajuste do tamanho do conjunto de teste
-    test_size = min(0.2, len(features) - 1)  # Evita um conjunto de teste vazio
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, target, test_size=test_size, random_state=42
+    X_train, X_test, y_train, y_test = (
+        X_scaled,
+        X_scaled,
+        target,
+        target,
     )
-
+    # basicamente instalando o modelo. o Random state tá definido pra todas as vezes que eu executar o código com os mesmos dados
+    # ele me dê uma resposta UNICA e precisa.
     model = DecisionTreeClassifier(random_state=42)
-    model.fit(X_train, y_train)
+    model.fit(
+        X_train, y_train
+    )  # aqui, ele minimiza a perca de 20% dos dados para treino e aprende a relação (a diferença entre as caracteristicas (X) e as labels (y))
 
-    # Salvar modelo e scaler
-    joblib.dump((model, scaler), "modelo_ajustado_e_scaler.pkl")
+    joblib.dump(
+        (model, scaler), "modelo_ajustado_e_scaler.pkl"
+    )  # aqui é um código pra eu salvar o meu modelo (se não, não dá pra usar KKK)
 
-    print("Modelo e scaler salvos como 'modelo_ajustado_e_scaler.pkl'.")
-    print(f"Acurácia do modelo: {accuracy_score(y_test, model.predict(X_test)):.2f}")
+    print(
+        f"Acurácia do modelo: {accuracy_score(y_test, model.predict(X_test)):.2f}"
+    )  # aqui é o calculo de acuracia do modelo! no caso 1.00 significa 100% de acuracia :D
     return model, scaler
 
 
-# Função para fazer previsões
-def prever_probabilidades(model, scaler, dados):
-    X_scaled = scaler.transform(dados)
-    probabilidades = model.predict_proba(X_scaled)
-    return probabilidades
-
-
-# Função para gerar previsões para o próximo mês
-def previsao_proximo_mes(model, scaler):
+# Função de previsão que foi alterada 500 mil vezes
+def previsao_prox_mes(model, scaler, dados_reais):
     now = datetime.now()
     next_month_start = (now.replace(day=1) + timedelta(days=32)).replace(day=1)
     next_month_end = (next_month_start + timedelta(days=32)).replace(day=1) - timedelta(
         days=1
     )
 
-    # Seleciona todos os dias do próximo mês
-    all_days = pd.date_range(start=next_month_start, end=next_month_end, freq="D")
+    proximomes = panda.date_range(start=next_month_start, end=next_month_end, freq="D")
 
-    # Simulação de dados para a previsão
-    n_samples = len(all_days)
-    features = pd.DataFrame(
-        {
-            "houve_vazamento": np.random.randint(
-                0, 2, n_samples
-            ),  # 0 ou 1 para simulação
-            "tipo_vazamento": np.random.randint(
-                1, 4, n_samples
-            ),  # Tipo de vazamento, por exemplo, 1, 2, 3
-        }
+    n_samples = len(proximomes)
+
+    # aqui eu extraio os dados do DataFrame (que foi gerado após ler o arquivo .csv através do panda)
+    dias_novos = numpy.linspace(
+        dados_reais["dia"].min(), dados_reais["dia"].max(), n_samples
     )
+    tipos_novos = numpy.linspace(
+        dados_reais["tipo_vazamento"].min(),
+        dados_reais["tipo_vazamento"].max(),
+        n_samples,
+    )
+
+    # Aqui eu crio um dataframe caso não haja com os novos valores.
+    features = panda.DataFrame({"dia": dias_novos, "tipo_vazamento": tipos_novos})
+
+    # aqui eu dou uma checada pra ver se tá tudo certo antes de fazer a escala da média (depuração)
+    if (
+        features["dia"].min() < dados_reais["dia"].min()
+        or features["tipo_vazamento"].min() < dados_reais["tipo_vazamento"].min()
+    ):
+        print(
+            "Aviso!!! Alguma característica está pra fora do intervalo esperado após a geração."
+        )
+
+    # basicamente essa pequena função mas super importante faz com que eu escale os dados do jeito que eu treinei la em cima no scaler!
+    #
     X_scaled = scaler.transform(features)
+
+    # Fazer previsões
     probabilidades = model.predict_proba(X_scaled)
-    previsoes = pd.DataFrame(
-        {"data": all_days, "probabilidade_vazamento": probabilidades[:, 1]}
+
+    previsoes = panda.DataFrame(
+        {"data": proximomes, "probabilidadevazamento": probabilidades[:, 1]}
     )
-    previsoes["dia_semana"] = previsoes[
-        "data"
-    ].dt.dayofweek  # Adiciona coluna do dia da semana
+    previsoes["diasemana"] = previsoes["data"].dt.dayofweek
+
     return previsoes
 
 
-# Função para exibir previsões formatadas
-def exibir_previsoes_formatadas(previsoes):
+# Formatação básica das previsões
+def mostrar_previsoes_formatadas(previsoes):
     dias_semana = [
-        "Segunda-feira",
-        "Terça-feira",
-        "Quarta-feira",
-        "Quinta-feira",
-        "Sexta-feira",
+        "Segunda feira",
+        "Terça feira",
+        "Quarta feira",
+        "Quinta feira",
+        "Sexta feira",
         "Sábado",
         "Domingo",
     ]
 
-    # Agrupar por dia da semana e calcular média das probabilidades
-    previsoes_agrupadas = previsoes.groupby("dia_semana").mean()
+    previsoesjuntas = previsoes.groupby("diasemana").mean()
 
-    for dia_semana, grupo in previsoes_agrupadas.iterrows():
+    for diasemana, grupo in previsoesjuntas.iterrows():
         print(
-            f"{dias_semana[dia_semana]} - Probabilidade: {grupo['probabilidade_vazamento'] * 100:.2f}%"
+            f"{dias_semana[diasemana]} - Probabilidade: {grupo['probabilidadevazamento'] * 100:.2f}%"
         )
 
 
-# Função para menu
+# Menu básico com opções para navegar
 def menu():
     print("\nMenu:")
     print("1. Inserir informações de vazamento")
@@ -149,13 +162,13 @@ def main():
         if escolha == "1":
             while True:
                 try:
-                    houve_vazamento = int(input("Houve vazamento (0 = Sim, 1 = Não): "))
+                    houve_vazamento = int(input("Houve vazamento (0 = Não, 1 = Sim): "))
                     if houve_vazamento in [0, 1]:
                         break
                     else:
-                        print("Erro: O valor deve ser 0 (Sim) ou 1 (Não).")
+                        print("O valor deve ser 0 para Sim e 1 para não!")
                 except ValueError:
-                    print("Erro: Por favor, insira um valor válido.")
+                    print("Por favor, coloque um valor valido.")
 
             while True:
                 try:
@@ -165,7 +178,7 @@ def main():
                     else:
                         print("Erro: O dia deve ser um número entre 01 e 31.")
                 except ValueError:
-                    print("Erro: Por favor, insira um número válido.")
+                    print("Erro, por favor insira um valor valido")
 
             while True:
                 try:
@@ -173,9 +186,9 @@ def main():
                     if tipo_vazamento in [1, 2, 3]:
                         break
                     else:
-                        print("Erro: O tipo de vazamento deve ser 1, 2 ou 3.")
+                        print("O Tipo de vazamento é entre 1, 2 ou 3 !")
                 except ValueError:
-                    print("Erro: Por favor, insira um valor válido.")
+                    print("Erro: Valor invalido, por favor insira um valor correto.")
 
             data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             salvar_dados_csv(houve_vazamento, dia, tipo_vazamento, data)
@@ -184,19 +197,19 @@ def main():
             data = carregar_dados()
             if not data.empty:
                 data_filtrada = filtrar_dados(data)
-                features = data_filtrada[["houve_vazamento", "tipo_vazamento"]]
+                features = data_filtrada[["dia", "tipo_vazamento"]]
                 target = data_filtrada["houve_vazamento"]
                 if model is None or scaler is None:
-                    model, scaler = treinar_modelo(features, target)
-                previsoes = previsao_proximo_mes(model, scaler)
-                exibir_previsoes_formatadas(previsoes)
+                    model, scaler = treinamento(features, target)
+                previsoes = previsao_prox_mes(model, scaler, data_filtrada)
+                mostrar_previsoes_formatadas(previsoes)
 
         elif escolha == "0":
-            print("Saindo do programa...")
+            print("Saindo.")
             break
 
         else:
-            print("Opção inválida. Tente novamente.")
+            print("Opção não é valida. Tente novamente!")
 
 
 if __name__ == "__main__":
